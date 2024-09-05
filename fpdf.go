@@ -3869,8 +3869,8 @@ func (f *Fpdf) replaceAliases() {
 			}
 			for n := 1; n <= f.page; n++ {
 				s := f.pages[n].String()
-				totalPageWidth := f.GetStringWidth(replacement)
-				aliasWith := f.GetStringWidth(alias)
+				totalPageWidth := f.GetStringWidth(strings.Replace(replacement, "\x00", "", -1))
+				aliasWith := f.GetStringWidth(strings.Replace(alias, "\x00", "", -1))
 				re := regexp.MustCompile(fmt.Sprintf(`BT.*%s.*ET`, alias))
 				match := re.FindString(s)
 				if match != "" {
