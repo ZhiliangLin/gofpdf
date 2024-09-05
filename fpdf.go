@@ -36,6 +36,7 @@ import (
 	"math"
 	"os"
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -2929,7 +2930,7 @@ func (f *Fpdf) WriteLinkID(h float64, displayStr string, linkID int) {
 //
 // width indicates the width of the box the text will be drawn in. This is in
 // the unit of measure specified in New(). If it is set to 0, the bounding box
-//of the page will be taken (pageWidth - leftMargin - rightMargin).
+// of the page will be taken (pageWidth - leftMargin - rightMargin).
 //
 // lineHeight indicates the line height in the unit of measure specified in
 // New().
@@ -3868,6 +3869,21 @@ func (f *Fpdf) replaceAliases() {
 			}
 			for n := 1; n <= f.page; n++ {
 				s := f.pages[n].String()
+				totalPageWidth := f.GetStringWidth(replacement)
+				aliasWith := f.GetStringWidth(alias)
+				re := regexp.MustCompile(fmt.Sprintf(`BT.*\{%s\}.*ET`, alias))
+				match := re.FindString(s)
+				if match != "" {
+					// 提取第一個數字
+					XLoc := regexp.MustCompile(`BT [0-9.]+`).FindString(match)
+					locArr := strings.Split(XLoc, " ")
+					locNum, _ := strconv.ParseFloat(locArr[1], 64)
+					locNum = locNum + aliasWith - totalPageWidth
+					// 將match裡的數字替換
+					newXLoc := strings.Replace(XLoc, locArr[1], fmt.Sprintf("%f", locNum), 1)
+					newMatch := strings.Replace(match, XLoc, newXLoc, 1)
+					s = strings.Replace(s, match, newMatch, 1)
+				}
 				if strings.Contains(s, alias) {
 					s = strings.Replace(s, alias, replacement, -1)
 					f.pages[n].Truncate(0)
